@@ -53,8 +53,3 @@ def input_yes_no(prompt: str) -> bool:
         if answer in ("н", "нет", "n", "no"):
             return False
         print("Ответьте «д» или «н».")
-
-
-def parse_waypoints(text: str) -> list[str]:
-    """Разобрать строку с точками маршрута, перечисленными через запятую."""
-    return [point.strip() for point in text.split(",") if point.strip()]

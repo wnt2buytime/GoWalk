@@ -3,15 +3,19 @@
 import inspect
 from collections.abc import Callable
 
-from reviews import (add_review, delete_route_reviews, get_average_rating,
-                     get_route_reviews)
-from routes import (DIFFICULTY_LEVELS, add_route, calculate_duration_minutes,
-                    delete_route, filter_routes, find_routes, get_districts,
-                    get_difficulty_level, get_route, iter_public_routes,
-                    sort_routes)
-from storage import load_reviews, load_routes, save_reviews, save_routes
-from utils import (input_float, input_int, input_text, input_yes_no,
-                   parse_waypoints)
+from models import Review, Route, User, Waypoint
+from models.reviews import (add_review, delete_route_reviews,
+                            get_average_rating, get_ratings,
+                            get_route_reviews, show_reviews)
+from models.routes import (DIFFICULTY_LEVELS, add_route, delete_route,
+                           filter_routes, find_routes, get_districts,
+                           get_route_by_id, iter_public_routes,
+                           show_route_details, show_routes, sort_routes)
+from models.users import add_user, find_user, get_user_by_id, show_users
+from models.waypoints import WAYPOINT_KINDS
+from storage import (load_reviews, load_routes, load_users, save_reviews,
+                     save_routes, save_users)
+from utils import input_float, input_int, input_text, input_yes_no
 from weather import is_good_weather_for_walk
 
 SORT_OPTIONS = (
@@ -21,65 +25,76 @@ SORT_OPTIONS = (
 )
 
 
-def format_rating(reviews: list[dict], route_id: int) -> str:
-    """Вернуть среднюю оценку маршрута в виде строки."""
-    rating = get_average_rating(reviews, route_id)
-    return "нет оценок" if rating is None else f"{rating} из 5"
+def save_data(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
+    """Сохранить все коллекции объектов в JSON-файлы."""
+    save_users(users)
+    save_routes(routes)
+    save_reviews(reviews)
 
 
-def show_route_list(route_list: list[dict], reviews: list[dict]) -> None:
-    """Вывести маршруты в виде таблицы."""
-    if not route_list:
-        print("Маршруты не найдены.")
-        return
-    print(f"{'№':>3}  {'Название':<35} {'Район':<15} {'Км':>5}  "
-          f"{'Сложность':<9}  Оценка")
-    for route in route_list:
-        difficulty = get_difficulty_level(
-            route["length_km"], route["elevation_gain_m"]
-        )
-        print(f"{route['id']:>3}  {route['name']:<35} "
-              f"{route['district']:<15} {route['length_km']:>5}  "
-              f"{difficulty:<9}  {format_rating(reviews, route['id'])}")
+def choose_route(routes: list[Route]) -> Route:
+    """Запросить номер маршрута и вернуть найденный объект."""
+    return get_route_by_id(routes, input_int("Номер маршрута: "))
 
 
-def show_route_details(route: dict, reviews: list[dict]) -> None:
-    """Вывести подробную карточку маршрута."""
-    duration_minutes = calculate_duration_minutes(route["length_km"])
-    difficulty = get_difficulty_level(
-        route["length_km"], route["elevation_gain_m"]
-    )
-    print(f"Маршрут: {route['name']}")
-    print(f"Район: {route['district']}")
-    print(f"Длина: {route['length_km']} км")
-    print("Набор высоты: " + str(route["elevation_gain_m"]) + " м")
-    print(f"Сложность: {difficulty}")
-    print(f"Ожидаемая продолжительность: {duration_minutes} мин")
-    print(f"Точки маршрута: {' → '.join(route['waypoints'])}")
-    print(f"Автор: {route['author']}")
-    print(f"Дата создания: {route['created_at']}")
-    print(f"Публичный маршрут: {'да' if route['is_public'] else 'нет'}")
-    print(f"Средняя оценка: {format_rating(reviews, route['id'])}")
+def choose_user(users: list[User]) -> User:
+    """Запросить номер пользователя и вернуть найденный объект."""
+    return get_user_by_id(users, input_int("Номер пользователя: "))
 
 
-def show_routes(routes: dict[int, dict], reviews: list[dict]) -> None:
+def input_waypoint() -> Waypoint | None:
+    """Запросить точку маршрута; пустое название завершает ввод."""
+    name = input_text("Название точки (пусто — закончить): ",
+                      allow_empty=True)
+    if not name:
+        return None
+    for number, kind in enumerate(WAYPOINT_KINDS, start=1):
+        print(f"  {number}. {kind}")
+    kind_number = input_int("Тип точки: ", 1, len(WAYPOINT_KINDS))
+    return Waypoint(name, WAYPOINT_KINDS[kind_number - 1])
+
+
+def show_public_routes(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Показать публичные маршруты."""
-    show_route_list(list(iter_public_routes(routes)), reviews)
+    public_routes = list(iter_public_routes(routes))
+    show_routes(public_routes, get_ratings(reviews, public_routes))
 
 
-def show_route_card(routes: dict[int, dict], reviews: list[dict]) -> None:
+def show_route_card(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Показать карточку маршрута."""
-    route_id = input_int("Номер маршрута: ")
-    show_route_details(get_route(routes, route_id), reviews)
+    route = choose_route(routes)
+    show_route_details(route)
+    rating = get_average_rating(reviews, route)
+    print(f"Средняя оценка: {'нет оценок' if rating is None else rating}")
 
 
-def search_routes(routes: dict[int, dict], reviews: list[dict]) -> None:
+def search_routes(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Найти маршрут по названию или достопримечательности."""
-    query = input_text("Что ищем: ")
-    show_route_list(find_routes(routes, query), reviews)
+    found = find_routes(routes, input_text("Что ищем: "))
+    show_routes(found, get_ratings(reviews, found))
 
 
-def choose_routes(routes: dict[int, dict], reviews: list[dict]) -> None:
+def choose_routes(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Подобрать маршрут по параметрам."""
     print("Сложность: " + ", ".join(DIFFICULTY_LEVELS)
           + " (пусто — любая)")
@@ -93,80 +108,130 @@ def choose_routes(routes: dict[int, dict], reviews: list[dict]) -> None:
 
     print("Районы: " + ", ".join(get_districts(routes)) + " (пусто — любой)")
     district = input_text("Район: ", allow_empty=True) or None
-    show_route_list(
-        filter_routes(routes, difficulty, max_length_km, district), reviews
-    )
+    found = filter_routes(routes, difficulty, max_length_km, district)
+    show_routes(found, get_ratings(reviews, found))
 
 
-def show_sorted_routes(routes: dict[int, dict], reviews: list[dict]) -> None:
+def show_sorted_routes(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Отсортировать маршруты."""
     for number, (_, title) in enumerate(SORT_OPTIONS, start=1):
         print(f"{number}. {title}")
     choice = input_int("Способ сортировки: ", 1, len(SORT_OPTIONS))
     key = SORT_OPTIONS[choice - 1][0]
-    show_route_list(
-        sort_routes(list(iter_public_routes(routes)), key), reviews
-    )
+    sorted_routes = sort_routes(list(iter_public_routes(routes)), key)
+    show_routes(sorted_routes, get_ratings(reviews, sorted_routes))
 
 
-def create_route(routes: dict[int, dict], reviews: list[dict]) -> None:
+def create_route(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Добавить маршрут."""
-    route = add_route(
-        routes,
-        name=input_text("Название: "),
-        district=input_text("Район: "),
-        length_km=input_float("Длина, км: ", min_value=0.1),
-        elevation_gain_m=input_int("Набор высоты, м: ", min_value=0),
-        waypoints=parse_waypoints(
-            input_text("Точки маршрута через запятую: ")
-        ),
-        author=input_text("Автор: "),
-        is_public=input_yes_no("Сделать маршрут публичным?"),
-    )
-    save_routes(routes)
-    print(f"Маршрут «{route['name']}» добавлен под номером {route['id']}.")
+    author = choose_user(users)
+    name = input_text("Название: ")
+    district = input_text("Район: ")
+    length_km = input_float("Длина, км: ", min_value=0.1)
+    elevation_gain_m = input_int("Набор высоты, м: ", min_value=0)
+    waypoints = []
+    while (waypoint := input_waypoint()) is not None:
+        waypoints.append(waypoint)
+    is_public = input_yes_no("Сделать маршрут публичным?")
+    route = add_route(routes, name, district, length_km, elevation_gain_m,
+                      author, waypoints, is_public)
+    save_data(routes, users, reviews)
+    print(f"Маршрут «{route.name}» добавлен под номером {route.id}.")
 
 
-def remove_route(routes: dict[int, dict], reviews: list[dict]) -> None:
+def extend_route(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
+    """Добавить точку в маршрут."""
+    route = choose_route(routes)
+    waypoint = input_waypoint()
+    if waypoint is None:
+        print("Точка не добавлена.")
+        return
+    route.add_waypoint(waypoint)
+    save_data(routes, users, reviews)
+    print(f"Точка «{waypoint.name}» добавлена в маршрут «{route.name}».")
+
+
+def remove_route(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Удалить маршрут."""
     route = delete_route(routes, input_int("Номер маршрута: "))
-    deleted_count = delete_route_reviews(reviews, route["id"])
-    save_routes(routes)
-    save_reviews(reviews)
-    print(f"Маршрут «{route['name']}» удалён "
+    deleted_count = delete_route_reviews(reviews, route)
+    save_data(routes, users, reviews)
+    print(f"Маршрут «{route.name}» удалён "
           f"(удалено отзывов: {deleted_count}).")
 
 
-def leave_review(routes: dict[int, dict], reviews: list[dict]) -> None:
+def leave_review(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Оставить отзыв о маршруте."""
-    route_id = input_int("Номер маршрута: ")
-    get_route(routes, route_id)
-    add_review(
-        reviews,
-        routes,
-        route_id,
-        author=input_text("Ваше имя: "),
-        rating=input_int("Оценка (1–5): ", 1, 5),
-        text=input_text("Отзыв: ", allow_empty=True),
-    )
-    save_reviews(reviews)
-    print("Спасибо за отзыв!")
+    route = choose_route(routes)
+    user = choose_user(users)
+    rating = input_int("Оценка (1–5): ", 1, 5)
+    text = input_text("Отзыв: ", allow_empty=True)
+    review = add_review(reviews, route, user, rating, text)
+    if review is None:
+        print(f"{user.name} уже оставлял(а) отзыв о маршруте «{route.name}».")
+        return
+    save_data(routes, users, reviews)
+    print(f"Спасибо за отзыв! Номер отзыва: {review.id}.")
 
 
-def show_reviews(routes: dict[int, dict], reviews: list[dict]) -> None:
+def show_route_reviews(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Показать отзывы о маршруте."""
-    route = get_route(routes, input_int("Номер маршрута: "))
-    route_reviews = get_route_reviews(reviews, route["id"])
-    print(f"Отзывы о маршруте «{route['name']}» "
-          f"(средняя оценка: {format_rating(reviews, route['id'])}):")
-    if not route_reviews:
-        print("Отзывов пока нет.")
-    for review in route_reviews:
-        print(f"- {review['author']}, {review['created_at']}, "
-              f"оценка {review['rating']}: {review['text']}")
+    route = choose_route(routes)
+    print(f"Отзывы о маршруте «{route.name}»:")
+    show_reviews(get_route_reviews(reviews, route))
 
 
-def check_weather(routes: dict[int, dict], reviews: list[dict]) -> None:
+def show_all_users(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
+    """Показать пользователей."""
+    query = input_text("Поиск по имени или почте (пусто — все): ",
+                       allow_empty=True)
+    show_users(find_user(users, query) if query else users)
+
+
+def register_user(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
+    """Зарегистрировать пользователя."""
+    user = add_user(users, input_text("Имя: "), input_text("Почта: "))
+    save_data(routes, users, reviews)
+    print(f"Пользователь {user} зарегистрирован.")
+
+
+def check_weather(
+    routes: list[Route],
+    users: list[User],
+    reviews: list[Review]
+) -> None:
     """Проверить погоду для прогулки."""
     temperature_c = input_float("Температура воздуха, °C: ")
     is_raining = input_yes_no("Идёт дождь?")
@@ -175,16 +240,19 @@ def check_weather(routes: dict[int, dict], reviews: list[dict]) -> None:
 
 
 MENU_ACTIONS = {
-    "1": show_routes,
+    "1": show_public_routes,
     "2": show_route_card,
     "3": search_routes,
     "4": choose_routes,
     "5": show_sorted_routes,
     "6": create_route,
-    "7": remove_route,
-    "8": leave_review,
-    "9": show_reviews,
-    "10": check_weather,
+    "7": extend_route,
+    "8": remove_route,
+    "9": leave_review,
+    "10": show_route_reviews,
+    "11": show_all_users,
+    "12": register_user,
+    "13": check_weather,
 }
 
 
@@ -204,8 +272,9 @@ def print_menu() -> None:
 def main() -> None:
     """Точка запуска приложения: загрузка данных и цикл меню."""
     try:
-        routes = load_routes()
-        reviews = load_reviews()
+        users = load_users()
+        routes = load_routes(users)
+        reviews = load_reviews(routes, users)
     except ValueError as error:
         print(f"Ошибка загрузки данных: {error}")
         return
@@ -214,7 +283,6 @@ def main() -> None:
         print_menu()
         choice = input("Выберите действие: ").strip()
         if choice == "0":
-            print("До встречи на прогулке!")
             break
         action = MENU_ACTIONS.get(choice)
         if action is None:
@@ -222,11 +290,17 @@ def main() -> None:
             continue
         print()
         try:
-            action(routes, reviews)
+            action(routes, users, reviews)
         except (ValueError, LookupError) as error:
             print(f"Ошибка: {error}")
         except OSError as error:
             print(f"Не удалось сохранить данные: {error}")
+
+    try:
+        save_data(routes, users, reviews)
+    except OSError as error:
+        print(f"Не удалось сохранить данные: {error}")
+    print("До встречи на прогулке!")
 
 
 if __name__ == "__main__":

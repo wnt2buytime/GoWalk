@@ -1,43 +1,68 @@
 import pytest
 
-from reviews import add_review, delete_review, get_average_rating
-from routes import add_route
+from models import Review, Route, User
+from models.reviews import (add_review, delete_review, delete_route_reviews,
+                            get_average_rating, get_route_reviews)
 
 
-def make_routes() -> dict[int, dict]:
-    routes = {}
-    add_route(routes, "Старый Арбат", "Арбат", 2.1, 10, [], "Анна")
-    return routes
+def make_objects() -> tuple[Route, User, User]:
+    author = User(1, "Анна", "anna@example.com")
+    walker = User(2, "Олег", "oleg@example.com")
+    route = Route(1, "Старый Арбат", "Арбат", 2.1, 10, author)
+    return route, author, walker
+
+
+def test_review_creation():
+    route, _, walker = make_objects()
+    review = Review(1, route, walker, 5, "Отлично")
+    assert review.route is route
+    assert review.user is walker
+    assert review.route.name == "Старый Арбат"
+    assert review.is_positive()
+
+
+def test_review_with_invalid_rating():
+    route, _, walker = make_objects()
+    assert not Review.validate_rating(6)
+    with pytest.raises(ValueError):
+        Review(1, route, walker, 0)
 
 
 def test_add_review():
+    route, _, walker = make_objects()
     reviews = []
-    add_review(reviews, make_routes(), 1, "Олег", 5, "Отлично")
-    assert len(reviews) == 1
-    assert reviews[0]["route_id"] == 1
+    review = add_review(reviews, route, walker, 4, "Хорошо")
+    assert review is not None
+    assert reviews == [review]
 
 
-def test_add_review_for_missing_route():
-    with pytest.raises(LookupError):
-        add_review([], make_routes(), 42, "Олег", 5)
-
-
-def test_add_review_with_invalid_rating():
-    with pytest.raises(ValueError):
-        add_review([], make_routes(), 1, "Олег", 6)
+def test_second_review_from_same_user_forbidden():
+    route, author, walker = make_objects()
+    reviews = []
+    add_review(reviews, route, walker, 5)
+    assert add_review(reviews, route, walker, 1) is None
+    assert add_review(reviews, route, author, 4) is not None
+    assert len(reviews) == 2
 
 
 def test_get_average_rating():
-    routes = make_routes()
+    route, author, walker = make_objects()
     reviews = []
-    add_review(reviews, routes, 1, "Олег", 5)
-    add_review(reviews, routes, 1, "Анна", 4)
-    assert get_average_rating(reviews, 1) == 4.5
-    assert get_average_rating([], 1) is None
+    assert get_average_rating(reviews, route) is None
+    add_review(reviews, route, author, 5)
+    add_review(reviews, route, walker, 4)
+    assert get_average_rating(reviews, route) == 4.5
+    assert len(get_route_reviews(reviews, route)) == 2
 
 
-def test_delete_review():
+def test_delete_reviews():
+    route, author, walker = make_objects()
     reviews = []
-    add_review(reviews, make_routes(), 1, "Олег", 5)
+    add_review(reviews, route, author, 5)
+    add_review(reviews, route, walker, 4)
     delete_review(reviews, 1)
+    assert [review.id for review in reviews] == [2]
+    assert delete_route_reviews(reviews, route) == 1
     assert reviews == []
+    with pytest.raises(LookupError):
+        delete_review(reviews, 1)
