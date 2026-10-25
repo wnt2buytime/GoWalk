@@ -78,6 +78,17 @@ def add_review(
     return review
 
 
+def find_review_by_id(
+    reviews: list[Review],
+    review_id: int
+) -> Review | None:
+    """Найти отзыв по идентификатору или вернуть None."""
+    for review in reviews:
+        if review.id == review_id:
+            return review
+    return None
+
+
 def get_route_reviews(reviews: list[Review], route: Route) -> list[Review]:
     """Вернуть отзывы о маршруте."""
     return [review for review in reviews if review.route is route]
@@ -101,11 +112,11 @@ def get_ratings(
 
 def delete_review(reviews: list[Review], review_id: int) -> Review:
     """Удалить отзыв по идентификатору и вернуть его."""
-    for review in reviews:
-        if review.id == review_id:
-            reviews.remove(review)
-            return review
-    raise LookupError(f"Отзыв с номером {review_id} не найден")
+    review = find_review_by_id(reviews, review_id)
+    if review is None:
+        raise LookupError(f"Отзыв с номером {review_id} не найден")
+    reviews.remove(review)
+    return review
 
 
 def delete_route_reviews(reviews: list[Review], route: Route) -> int:

@@ -127,15 +127,23 @@ def add_route(
     return route
 
 
+def find_route_by_id(routes: list[Route], route_id: int) -> Route | None:
+    """Найти маршрут по идентификатору или вернуть None."""
+    for route in routes:
+        if route.id == route_id:
+            return route
+    return None
+
+
 def get_route_by_id(routes: list[Route], route_id: int) -> Route:
     """Найти маршрут по идентификатору.
 
     Если маршрута нет, выбрасывается LookupError.
     """
-    for route in routes:
-        if route.id == route_id:
-            return route
-    raise LookupError(f"Маршрут с номером {route_id} не найден")
+    route = find_route_by_id(routes, route_id)
+    if route is None:
+        raise LookupError(f"Маршрут с номером {route_id} не найден")
+    return route
 
 
 def delete_route(routes: list[Route], route_id: int) -> Route:
