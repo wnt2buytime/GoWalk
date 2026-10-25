@@ -8,14 +8,14 @@
             </p>
             <p class="mb-2">
                 {% include "routes/includes/difficulty_badge.html" %}
-                {% if rating %}
-                    <span class="rating ms-2">★ {{ rating|floatformat:1 }}</span>
+                {% if route.avg_rating %}
+                    <span class="rating ms-2">★ {{ route.avg_rating|floatformat:1 }}</span>
                 {% else %}
                     <span class="rating rating-low ms-2">нет оценок</span>
                 {% endif %}
             </p>
             <p class="card-text small text-muted">
-                Точек на маршруте: {{ route.waypoints|length }}
+                Точек на маршруте: {{ route.waypoints_count }} · отзывов: {{ route.reviews_count }}
             </p>
             <a href="{% url 'routes:detail' route.id %}" class="btn btn-success mt-auto">
                 Подробнее

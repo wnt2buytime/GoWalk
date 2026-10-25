@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика — GoWalk{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Статистика</h1>
+
+    <div class="row g-3 text-center mb-4">
+        <div class="col-6 col-md-3">
+            <div class="bg-white rounded-3 shadow-sm p-3">
+                <div class="gowalk-stat">{{ totals.routes_count }}</div>
+                <div>маршрутов</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="bg-white rounded-3 shadow-sm p-3">
+                <div class="gowalk-stat">{{ totals.total_length_km|floatformat:1 }}</div>
+                <div>км прогулок</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="bg-white rounded-3 shadow-sm p-3">
+                <div class="gowalk-stat">{{ totals.reviews_count }}</div>
+                <div>отзывов</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="bg-white rounded-3 shadow-sm p-3">
+                <div class="gowalk-stat">{{ totals.avg_rating|floatformat:1|default:"—" }}</div>
+                <div>средняя оценка</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <section class="col-lg-6">
+            <h2 class="h5">Маршруты по районам</h2>
+            <table class="table bg-white shadow-sm">
+                <thead>
+                    <tr><th>Район</th><th>Маршрутов</th><th>Всего, км</th><th>Средняя длина, км</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in by_district %}
+                        <tr>
+                            <td>{{ item.district }}</td>
+                            <td>{{ item.routes_count }}</td>
+                            <td>{{ item.total_length_km|floatformat:1 }}</td>
+                            <td>{{ item.avg_length_km|floatformat:1 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-muted">Данные отсутствуют.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="col-lg-6">
+            <h2 class="h5">Маршруты по сложности</h2>
+            <table class="table bg-white shadow-sm">
+                <thead>
+                    <tr><th>Сложность</th><th>Маршрутов</th><th>Среднее время, мин</th></tr>
+                </thead>
+                <tbody>
+                    {% for route in by_difficulty %}
+                        <tr>
+                            <td>{% include "routes/includes/difficulty_badge.html" %}</td>
+                            <td>{{ route.routes_count }}</td>
+                            <td>{{ route.avg_duration_minutes }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3" class="text-muted">Данные отсутствуют.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="col-lg-6">
+            <h2 class="h5">Популярные маршруты (от {{ popular_min_reviews }} отзывов)</h2>
+            <ul class="list-group shadow-sm">
+                {% for route in popular_routes %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <a href="{% url 'routes:detail' route.id %}">{{ route.name }}</a>
+                        <span>
+                            <span class="rating">★ {{ route.avg_rating|floatformat:1 }}</span>
+                            <span class="text-muted small">({{ route.reviews_count }})</span>
+                        </span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Пока нет маршрутов с таким числом отзывов.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="col-lg-6">
+            <h2 class="h5">Активность пользователей</h2>
+            <table class="table bg-white shadow-sm">
+                <thead>
+                    <tr><th>Пользователь</th><th>Маршрутов</th><th>Отзывов</th></tr>
+                </thead>
+                <tbody>
+                    {% for author in authors %}
+                        <tr>
+                            <td>{{ author.name }}</td>
+                            <td>{{ author.routes_count }}</td>
+                            <td>{{ author.reviews_count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="col-lg-6">
+            <h2 class="h5">Точки интереса по типам</h2>
+            <ul class="list-group shadow-sm">
+                {% for item in waypoint_kinds %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        {{ item.kind|capfirst }}
+                        <span class="badge bg-success rounded-pill">{{ item.waypoints_count }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+{% endblock %}

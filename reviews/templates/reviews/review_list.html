@@ -10,10 +10,10 @@
             <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div>
                     <a href="{% url 'reviews:detail' review.id %}">
-                        {{ review.route.name }} — {{ review.user.name }}
+                        {{ review.route_name }} — {{ review.user_name }}
                     </a>
                     <div class="small text-muted">
-                        {{ review.created_at|date:"d.m.Y" }} ·
+                        {{ review.created_at_display }} ·
                         {{ review.text|default:"без комментария"|truncatechars:60 }}
                     </div>
                 </div>

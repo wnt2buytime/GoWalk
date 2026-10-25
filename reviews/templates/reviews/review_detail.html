@@ -12,14 +12,14 @@
                 <dl class="row">
                     <dt class="col-sm-3">Маршрут</dt>
                     <dd class="col-sm-9">
-                        <a href="{% url 'routes:detail' review.route.id %}">{{ review.route.name }}</a>
+                        <a href="{% url 'routes:detail' review.route_id %}">{{ review.route_name }}</a>
                     </dd>
                     <dt class="col-sm-3">Автор</dt>
-                    <dd class="col-sm-9">{{ review.user.name }}</dd>
+                    <dd class="col-sm-9">{{ review.user_name }}</dd>
                     <dt class="col-sm-3">Оценка</dt>
                     <dd class="col-sm-9">{% include "reviews/includes/rating_badge.html" %}</dd>
                     <dt class="col-sm-3">Дата</dt>
-                    <dd class="col-sm-9">{{ review.created_at|date:"d.m.Y" }}</dd>
+                    <dd class="col-sm-9">{{ review.created_at_display }}</dd>
                 </dl>
                 <p class="review-text mb-0">{{ review.text|default:"Без комментария." }}</p>
             </div>

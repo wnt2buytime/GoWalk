@@ -5,8 +5,11 @@
 {% block content %}
     <h1 class="mb-3">Маршруты</h1>
     <p>
-        Всего маршрутов: {{ routes_with_ratings|length }}
-        · показано: <span id="visible-routes">{{ routes_with_ratings|length }}</span>
+        Всего маршрутов: {{ routes|length }}
+        · показано: <span id="visible-routes">{{ routes|length }}</span>
+    </p>
+    <p>
+        <a href="{% url 'routes:search' %}">Подобрать маршрут по длине, сложности и району →</a>
     </p>
 
     <div class="btn-group mb-4" role="group" aria-label="Сложность">
@@ -21,7 +24,7 @@
     </div>
 
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        {% for route, rating in routes_with_ratings %}
+        {% for route in routes %}
             {% include "routes/includes/route_card.html" %}
         {% empty %}
             <p class="text-muted">Маршруты не найдены.</p>

@@ -1,23 +1,36 @@
-"""View-функции главной страницы и обработчик ошибки 404."""
+"""View-функции главной страницы, статистики и обработчик ошибки 404."""
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 
-from models.routes import iter_public_routes
-from storage import load_reviews, load_routes, load_users
+from db.queries import fetch_all, fetch_one
+
+POPULAR_MIN_REVIEWS = 2
 
 
 def index(request: HttpRequest) -> HttpResponse:
-    """Главная страница: описание сервиса, навигация и статистика."""
-    users = load_users()
-    routes = load_routes(users)
-    reviews = load_reviews(routes, users)
+    """Главная страница: описание сервиса, навигация и показатели."""
+    return render(
+        request,
+        "homepage/index.html",
+        {"totals": fetch_one("totals")},
+    )
+
+
+def statistics(request: HttpRequest) -> HttpResponse:
+    """Страница статистики по маршрутам, отзывам и пользователям."""
     context = {
-        "routes_count": len(list(iter_public_routes(routes))),
-        "reviews_count": len(reviews),
-        "users_count": len(users),
+        "totals": fetch_one("totals"),
+        "by_district": fetch_all("stats_by_district"),
+        "by_difficulty": fetch_all("stats_by_difficulty"),
+        "popular_routes": fetch_all(
+            "popular_routes", {"min_reviews": POPULAR_MIN_REVIEWS}
+        ),
+        "popular_min_reviews": POPULAR_MIN_REVIEWS,
+        "authors": fetch_all("author_activity"),
+        "waypoint_kinds": fetch_all("waypoint_kinds"),
     }
-    return render(request, "homepage/index.html", context)
+    return render(request, "homepage/statistics.html", context)
 
 
 def page_not_found(request: HttpRequest, exception: Exception) -> HttpResponse:

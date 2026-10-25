@@ -11,8 +11,8 @@
                 <h1 class="card-title h3">{{ route.name }}</h1>
                 <p>
                     {% include "routes/includes/difficulty_badge.html" %}
-                    {% if rating %}
-                        <span class="rating ms-2">★ {{ rating|floatformat:1 }} из 5</span>
+                    {% if route.avg_rating %}
+                        <span class="rating ms-2">★ {{ route.avg_rating|floatformat:1 }} из 5</span>
                     {% else %}
                         <span class="rating rating-low ms-2">нет оценок</span>
                     {% endif %}
@@ -27,18 +27,18 @@
                     <dt class="col-sm-4">Ожидаемая продолжительность</dt>
                     <dd class="col-sm-8">{{ route.duration_minutes }} мин</dd>
                     <dt class="col-sm-4">Автор</dt>
-                    <dd class="col-sm-8">{{ route.author.name }}</dd>
+                    <dd class="col-sm-8">{{ route.author_name }}</dd>
                     <dt class="col-sm-4">Дата создания</dt>
-                    <dd class="col-sm-8">{{ route.created_at|date:"d.m.Y" }}</dd>
+                    <dd class="col-sm-8">{{ route.created_at_display }}</dd>
                 </dl>
             </div>
         </div>
 
         <div class="row g-4">
             <div class="col-md-6">
-                <h2 class="h5">Точки маршрута ({{ route.waypoints|length }})</h2>
+                <h2 class="h5">Точки маршрута ({{ waypoints|length }})</h2>
                 <ol class="waypoint-list">
-                    {% for waypoint in route.waypoints %}
+                    {% for waypoint in waypoints %}
                         <li>
                             {{ waypoint.name }}
                             <span class="text-muted small">{{ waypoint.kind }}</span>
@@ -54,7 +54,7 @@
                     {% for review in reviews %}
                         <li class="list-group-item">
                             {% include "reviews/includes/rating_badge.html" %}
-                            <a href="{% url 'reviews:detail' review.id %}">{{ review.user.name }}</a>:
+                            <a href="{% url 'reviews:detail' review.id %}">{{ review.user_name }}</a>:
                             {{ review.text|default:"без комментария"|truncatechars:80 }}
                         </li>
                     {% empty %}

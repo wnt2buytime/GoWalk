@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Подбор маршрута — GoWalk{% endblock %}
+
+{% block content %}
+    <h1 class="mb-3">Подбор маршрута</h1>
+
+    <form method="get" class="row g-3 align-items-end bg-white rounded-3 shadow-sm p-3 mb-4">
+        <div class="col-md-3">
+            <label for="difficulty" class="form-label">Сложность</label>
+            <select id="difficulty" name="difficulty" class="form-select">
+                <option value="">любая</option>
+                {% for level in difficulty_levels %}
+                    <option value="{{ level }}" {% if level == difficulty %}selected{% endif %}>
+                        {{ level }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="max_length_km" class="form-label">Длина до, км</label>
+            <input
+                type="text"
+                inputmode="decimal"
+                id="max_length_km"
+                name="max_length_km"
+                value="{{ max_length_text }}"
+                placeholder="например, 5"
+                class="form-control"
+            >
+        </div>
+        <div class="col-md-4">
+            <label for="district" class="form-label">Район</label>
+            <select id="district" name="district" class="form-select">
+                <option value="">любой</option>
+                {% for item in districts %}
+                    <option value="{{ item.district }}" {% if item.district == district %}selected{% endif %}>
+                        {{ item.district }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-success">Найти</button>
+        </div>
+    </form>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% elif is_submitted %}
+        <h2 class="h5 mb-3">Найдено маршрутов: {{ routes|length }}</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for route in routes %}
+                {% include "routes/includes/route_card.html" %}
+            {% empty %}
+                <p class="text-muted">Подходящих маршрутов нет — попробуйте смягчить условия.</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <a href="{% url 'routes:list' %}" class="btn btn-outline-secondary mt-4">
+        ← ко всем маршрутам
+    </a>
+{% endblock %}
