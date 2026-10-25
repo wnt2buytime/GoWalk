@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if review %}Отзыв №{{ review.id }}{% else %}Отзыв не найден{% endif %} — GoWalk
+{% endblock %}
+
+{% block content %}
+    {% if review %}
+        <div class="card route-card">
+            <div class="card-body">
+                <h1 class="card-title h3">Отзыв №{{ review.id }}</h1>
+                <dl class="row">
+                    <dt class="col-sm-3">Маршрут</dt>
+                    <dd class="col-sm-9">
+                        <a href="{% url 'routes:detail' review.route.id %}">{{ review.route.name }}</a>
+                    </dd>
+                    <dt class="col-sm-3">Автор</dt>
+                    <dd class="col-sm-9">{{ review.user.name }}</dd>
+                    <dt class="col-sm-3">Оценка</dt>
+                    <dd class="col-sm-9">{% include "reviews/includes/rating_badge.html" %}</dd>
+                    <dt class="col-sm-3">Дата</dt>
+                    <dd class="col-sm-9">{{ review.created_at|date:"d.m.Y" }}</dd>
+                </dl>
+                <p class="review-text mb-0">{{ review.text|default:"Без комментария." }}</p>
+            </div>
+        </div>
+    {% else %}
+        <h1 class="text-danger">Отзыв не найден</h1>
+        <p>Отзыва с указанным номером нет.</p>
+    {% endif %}
+
+    <a href="{% url 'reviews:list' %}" class="btn btn-outline-secondary mt-4">
+        ← к списку отзывов
+    </a>
+{% endblock %}

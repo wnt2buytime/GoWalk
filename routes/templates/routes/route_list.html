@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Маршруты — GoWalk{% endblock %}
+
+{% block content %}
+    <h1 class="mb-3">Маршруты</h1>
+    <p>
+        Всего маршрутов: {{ routes_with_ratings|length }}
+        · показано: <span id="visible-routes">{{ routes_with_ratings|length }}</span>
+    </p>
+
+    <div class="btn-group mb-4" role="group" aria-label="Сложность">
+        <button type="button" class="btn btn-outline-success active" data-difficulty-filter="all">
+            Все
+        </button>
+        {% for level in difficulty_levels %}
+            <button type="button" class="btn btn-outline-success" data-difficulty-filter="{{ level }}">
+                {{ level|capfirst }}
+            </button>
+        {% endfor %}
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for route, rating in routes_with_ratings %}
+            {% include "routes/includes/route_card.html" %}
+        {% empty %}
+            <p class="text-muted">Маршруты не найдены.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% load static %}
+<header class="gowalk-header mb-4">
+    <nav class="container navbar navbar-expand" data-bs-theme="dark">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'homepage:index' %}">
+            <img
+                src="{% static 'homepage/img/logo.svg' %}"
+                alt="GoWalk"
+                class="gowalk-logo me-2"
+            >
+            GoWalk
+        </a>
+        <div class="navbar-nav">
+            <a class="nav-link" href="{% url 'homepage:index' %}">Главная</a>
+            <a class="nav-link" href="{% url 'routes:list' %}">Маршруты</a>
+            <a class="nav-link" href="{% url 'reviews:list' %}">Отзывы</a>
+        </div>
+    </nav>
+</header>

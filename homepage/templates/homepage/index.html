@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Главная — GoWalk{% endblock %}
+
+{% block content %}
+    <section class="gowalk-hero shadow-sm mb-4">
+        <h1 class="display-5">GoWalk</h1>
+        <p class="lead">
+            Сервис для создания и подбора пешеходных прогулочных маршрутов
+            по городу.
+        </p>
+        <p>
+            Выбирайте маршрут по длине, сложности и району, смотрите точки
+            интереса на пути и отзывы тех, кто уже прошёл маршрут.
+        </p>
+        <a href="{% url 'routes:list' %}" class="btn btn-success me-2">
+            Маршруты
+        </a>
+        <a href="{% url 'reviews:list' %}" class="btn btn-outline-success">
+            Отзывы
+        </a>
+    </section>
+
+    <div class="row g-3 text-center">
+        <div class="col-sm-4">
+            <div class="bg-white rounded-3 shadow-sm p-3">
+                <div class="gowalk-stat">{{ routes_count }}</div>
+                <div>маршрутов</div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="bg-white rounded-3 shadow-sm p-3">
+                <div class="gowalk-stat">{{ reviews_count }}</div>
+                <div>отзывов</div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="bg-white rounded-3 shadow-sm p-3">
+                <div class="gowalk-stat">{{ users_count }}</div>
+                <div>пользователей</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

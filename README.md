@@ -8,14 +8,17 @@ GoWalk — сервис для создания и подбора пешеход
 маршруты, созданные другими пользователями.
 
 Консольная версия приложения (ПР1–ПР3) дополнена веб-интерфейсом
-на Django (ПР5).
+на Django (ПР5), страницы которого с ПР6 формируются шаблонами Django.
 
 ## Используемые технологии
 
 - Python 3.12;
 - Django 5.2 — веб-фреймворк;
-- HTML — разметка страниц;
-- CSS и Bootstrap 5.3 — оформление страниц;
+- Django Template Language — шаблоны страниц;
+- HTML5 — разметка страниц;
+- CSS3 и Bootstrap 5.3 — оформление страниц;
+- JavaScript — небольшое поведение интерфейса;
+- JSON — хранение данных;
 - pytest — автоматизированные тесты;
 - flake8 — проверка качества кода.
 
@@ -96,30 +99,60 @@ User ──автор──> Route ──содержит──> Waypoint
 
 ## Страницы веб-интерфейса
 
-| URL | View-функция | Содержимое |
-|---|---|---|
-| `/` | `homepage.views.index()` | описание сервиса и навигация |
-| `/routes/` | `routes.views.routes()` | таблица публичных маршрутов с оценками |
-| `/routes/<int:route_id>/` | `routes.views.route_detail()` | карточка маршрута, точки и отзывы |
-| `/reviews/` | `reviews.views.reviews()` | список отзывов |
-| `/reviews/<int:review_id>/` | `reviews.views.review_detail()` | отзыв со ссылкой на маршрут |
+| URL | Имя маршрута | View-функция | Шаблон |
+|---|---|---|---|
+| `/` | `homepage:index` | `index()` | `homepage/index.html` |
+| `/routes/` | `routes:list` | `routes()` | `routes/route_list.html` |
+| `/routes/<int:route_id>/` | `routes:detail` | `route_detail()` | `routes/route_detail.html` |
+| `/reviews/` | `reviews:list` | `reviews()` | `reviews/review_list.html` |
+| `/reviews/<int:review_id>/` | `reviews:detail` | `review_detail()` | `reviews/review_detail.html` |
 
-Если маршрут или отзыв не найден (или маршрут скрыт автором),
-страница возвращает код 404. Для несуществующих адресов подключён
-собственный обработчик `handler404` (`homepage.views.page_not_found()`),
+View-функции только готовят данные (объекты ПР3 из JSON) и передают
+их в шаблон через контекст функцией `render()`; HTML в Python-коде
+больше не формируется, функция `page()` из ПР5 удалена.
+
+Если маршрут или отзыв не найден (или маршрут скрыт автором), view
+передаёт в шаблон `None`: шаблон через `{% if %}` / `{% else %}`
+выводит сообщение «не найден», а ответ возвращается с кодом 404.
+Несуществующие адреса обрабатывает `handler404`
+(`homepage.views.page_not_found()`, шаблон `templates/404.html`),
 он работает при `DEBUG = False`.
 
-Страницы формируются view-функциями на основе данных ПР3: функции
-`load_users()`, `load_routes()`, `load_reviews()` загружают объекты из
-JSON, `find_route_by_id()` и `find_review_by_id()` находят объект по
-идентификатору из URL, методы `Route` (`difficulty`,
-`duration_minutes()`) и функция `get_average_rating()` дают данные для
-карточки. Общий HTML-каркас с Bootstrap и навигацией собирает функция
-`page()` в `homepage/views.py`.
+## Шаблоны (Django Template Language)
 
-Создание, изменение и удаление данных (маршрутов, точек, отзывов,
-пользователей), поиск, отбор и сортировка пока доступны только в
-консольной версии — в веб-интерфейсе они появятся вместе с формами.
+- **Базовый шаблон** `templates/base.html` — HTML-каркас, Bootstrap,
+  собственные CSS и JavaScript, подвал; блоки `{% block title %}` и
+  `{% block content %}`. Все страницы наследуют его через
+  `{% extends "base.html" %}`.
+- **Включаемые шаблоны** (`{% include %}`):
+  - `templates/includes/navigation.html` — шапка с логотипом и меню;
+  - `routes/includes/route_card.html` — карточка маршрута в списке;
+  - `routes/includes/difficulty_badge.html` — бейдж сложности;
+  - `reviews/includes/rating_badge.html` — бейдж оценки отзыва.
+- **Контекст** — например, `{"routes_with_ratings": [(route, rating),
+  ...], "difficulty_levels": DIFFICULTY_LEVELS}` для списка маршрутов.
+- **Циклы и условия** — `{% for route, rating in routes_with_ratings %}`
+  с `{% empty %}`, `{% if route.difficulty == "лёгкий" %}`,
+  `{% if review.is_positive %}`.
+- **Именованные URL и пространства имён** — `app_name` в `urls.py`
+  каждого приложения, ссылки только через `{% url 'routes:detail'
+  route.id %}`.
+- **Фильтры** — `length` (количество маршрутов, точек, отзывов),
+  `default` (пустое название или текст отзыва), `date:"d.m.Y"` (даты),
+  `floatformat:1` (средняя оценка), `truncatechars` (превью отзыва),
+  `capfirst` (кнопки сложности). Фильтры только оформляют данные, бизнес-
+  логика остаётся в классах ПР3.
+
+## Статические файлы
+
+Каталог `homepage/static/homepage/`, подключение через `{% load static %}`
+и `{% static '...' %}` в `base.html` и `navigation.html`:
+
+- `css/style.css` — собственные стили: шапка, карточки маршрутов,
+  бейджи сложности, «путь» из точек маршрута, подвал;
+- `js/main.js` — текущий год в подвале и быстрый отбор карточек
+  маршрутов по сложности без перезагрузки страницы;
+- `img/logo.svg` — логотип GoWalk в шапке и иконка вкладки.
 
 ## Структура проекта
 
@@ -138,13 +171,35 @@ GoWalk/
 │   ├── urls.py         корневая маршрутизация и handler404
 │   ├── asgi.py
 │   └── wsgi.py
+├── templates/          шаблоны уровня проекта
+│   ├── base.html
+│   ├── 404.html
+│   └── includes/
+│       └── navigation.html
 ├── homepage/           приложение главной страницы
+│   ├── static/homepage/
+│   │   ├── css/style.css
+│   │   ├── js/main.js
+│   │   └── img/logo.svg
+│   ├── templates/homepage/
+│   │   └── index.html
 │   ├── urls.py
-│   └── views.py        page(), index(), page_not_found()
+│   └── views.py        index(), page_not_found()
 ├── routes/             приложение маршрутов
+│   ├── templates/routes/
+│   │   ├── route_list.html
+│   │   ├── route_detail.html
+│   │   └── includes/
+│   │       ├── route_card.html
+│   │       └── difficulty_badge.html
 │   ├── urls.py
 │   └── views.py        routes(), route_detail()
 ├── reviews/            приложение отзывов
+│   ├── templates/reviews/
+│   │   ├── review_list.html
+│   │   ├── review_detail.html
+│   │   └── includes/
+│   │       └── rating_badge.html
 │   ├── urls.py
 │   └── views.py        reviews(), review_detail()
 ├── models/             классы предметной области (ПР3)
@@ -246,7 +301,10 @@ pytest -v
 
 Тесты проверяют создание объектов и их методы, операции с маршрутами,
 пользователями и отзывами, связи между объектами и их восстановление
-при загрузке из JSON.
+при загрузке из JSON. Тесты `tests/test_views.py` запрашивают страницы
+тестовым клиентом Django (настройка в `tests/conftest.py`) и проверяют
+коды ответа, используемые шаблоны и контекст; они работают на данных
+каталога `data/`.
 
 ## Проверка качества кода
 
@@ -262,11 +320,16 @@ flake8
 - ПР2 — модули, коллекции, JSON-хранилище, тесты;
 - ПР3 — объектная модель: `User`, `Waypoint`, `Route`, `Review`;
 - ПР5 — Django-проект, приложения `homepage`, `routes`, `reviews`,
-  маршрутизация, страницы с данными и оформлением Bootstrap.
+  маршрутизация, страницы с данными и оформлением Bootstrap;
+- ПР6 — шаблоны Django: базовый шаблон, наследование, include,
+  контекст, циклы, условия, фильтры, именованные URL, собственные CSS,
+  JavaScript и изображение.
+
+Данные пока хранятся в JSON-файлах: Django ORM, база данных и формы
+ещё не используются.
 
 На следующих этапах планируется:
 
-- переход на шаблоны Django (`templates/`) вместо функции `page()`;
 - перенос сущностей в модели Django ORM и подключение базы данных;
 - формы создания и редактирования маршрутов и отзывов;
 - реализация пользователей;

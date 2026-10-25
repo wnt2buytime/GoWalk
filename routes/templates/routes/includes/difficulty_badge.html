@@ -1,0 +1,7 @@
+{% if route.difficulty == "лёгкий" %}
+    <span class="badge difficulty difficulty-easy">{{ route.difficulty }}</span>
+{% elif route.difficulty == "средний" %}
+    <span class="badge difficulty difficulty-medium">{{ route.difficulty }}</span>
+{% else %}
+    <span class="badge difficulty difficulty-hard">{{ route.difficulty }}</span>
+{% endif %}

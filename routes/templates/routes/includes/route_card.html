@@ -1,0 +1,25 @@
+<article class="col" data-difficulty="{{ route.difficulty }}">
+    <div class="card route-card h-100">
+        <div class="card-body d-flex flex-column">
+            <h2 class="card-title h5">{{ route.name|default:"Без названия" }}</h2>
+            <p class="route-meta mb-2">
+                {{ route.district }} · {{ route.length_km }} км ·
+                ≈ {{ route.duration_minutes }} мин
+            </p>
+            <p class="mb-2">
+                {% include "routes/includes/difficulty_badge.html" %}
+                {% if rating %}
+                    <span class="rating ms-2">★ {{ rating|floatformat:1 }}</span>
+                {% else %}
+                    <span class="rating rating-low ms-2">нет оценок</span>
+                {% endif %}
+            </p>
+            <p class="card-text small text-muted">
+                Точек на маршруте: {{ route.waypoints|length }}
+            </p>
+            <a href="{% url 'routes:detail' route.id %}" class="btn btn-success mt-auto">
+                Подробнее
+            </a>
+        </div>
+    </div>
+</article>

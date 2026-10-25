@@ -1,0 +1,128 @@
+/* Собственные стили проекта GoWalk (дополняют Bootstrap). */
+
+:root {
+    --gowalk-green: #2f9e5c;
+    --gowalk-green-dark: #237a46;
+    --gowalk-yellow: #ffd43b;
+    --gowalk-bg: #f4f8f5;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--gowalk-bg);
+}
+
+main {
+    flex: 1;
+}
+
+/* Шапка и подвал */
+
+.gowalk-header {
+    background: linear-gradient(90deg, var(--gowalk-green-dark), var(--gowalk-green));
+}
+
+.gowalk-logo {
+    width: 36px;
+    height: 36px;
+}
+
+.gowalk-footer {
+    padding: 1rem 0;
+    color: #6c757d;
+    border-top: 1px solid #dfe8e2;
+}
+
+/* Главная страница */
+
+.gowalk-hero {
+    padding: 3rem 2rem;
+    border-radius: 1rem;
+    background: #ffffff;
+    border-left: 6px solid var(--gowalk-green);
+}
+
+.gowalk-stat {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gowalk-green-dark);
+}
+
+/* Карточки маршрутов */
+
+.route-card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.route-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.route-meta {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Сложность и оценки */
+
+.difficulty {
+    font-weight: 600;
+}
+
+.difficulty-easy {
+    background-color: var(--gowalk-green);
+}
+
+.difficulty-medium {
+    background-color: var(--gowalk-yellow);
+    color: #343a40;
+}
+
+.difficulty-hard {
+    background-color: #e03131;
+}
+
+.rating {
+    font-weight: 600;
+    color: #f08c00;
+}
+
+.rating-low {
+    color: #868e96;
+}
+
+/* Точки маршрута */
+
+.waypoint-list {
+    list-style: none;
+    padding-left: 0;
+    border-left: 3px dashed var(--gowalk-green);
+}
+
+.waypoint-list li {
+    position: relative;
+    padding: 0.4rem 0 0.4rem 1.25rem;
+}
+
+.waypoint-list li::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 0.85rem;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--gowalk-green);
+}
+
+/* Отзывы */
+
+.review-text {
+    white-space: pre-line;
+}

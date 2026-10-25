@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if route %}{{ route.name }}{% else %}Маршрут не найден{% endif %} — GoWalk
+{% endblock %}
+
+{% block content %}
+    {% if route %}
+        <div class="card route-card mb-4">
+            <div class="card-body">
+                <h1 class="card-title h3">{{ route.name }}</h1>
+                <p>
+                    {% include "routes/includes/difficulty_badge.html" %}
+                    {% if rating %}
+                        <span class="rating ms-2">★ {{ rating|floatformat:1 }} из 5</span>
+                    {% else %}
+                        <span class="rating rating-low ms-2">нет оценок</span>
+                    {% endif %}
+                </p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Район</dt>
+                    <dd class="col-sm-8">{{ route.district }}</dd>
+                    <dt class="col-sm-4">Длина</dt>
+                    <dd class="col-sm-8">{{ route.length_km }} км</dd>
+                    <dt class="col-sm-4">Набор высоты</dt>
+                    <dd class="col-sm-8">{{ route.elevation_gain_m }} м</dd>
+                    <dt class="col-sm-4">Ожидаемая продолжительность</dt>
+                    <dd class="col-sm-8">{{ route.duration_minutes }} мин</dd>
+                    <dt class="col-sm-4">Автор</dt>
+                    <dd class="col-sm-8">{{ route.author.name }}</dd>
+                    <dt class="col-sm-4">Дата создания</dt>
+                    <dd class="col-sm-8">{{ route.created_at|date:"d.m.Y" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h2 class="h5">Точки маршрута ({{ route.waypoints|length }})</h2>
+                <ol class="waypoint-list">
+                    {% for waypoint in route.waypoints %}
+                        <li>
+                            {{ waypoint.name }}
+                            <span class="text-muted small">{{ waypoint.kind }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="text-muted">Точки пока не добавлены.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+            <div class="col-md-6">
+                <h2 class="h5">Отзывы ({{ reviews|length }})</h2>
+                <ul class="list-group">
+                    {% for review in reviews %}
+                        <li class="list-group-item">
+                            {% include "reviews/includes/rating_badge.html" %}
+                            <a href="{% url 'reviews:detail' review.id %}">{{ review.user.name }}</a>:
+                            {{ review.text|default:"без комментария"|truncatechars:80 }}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">Отзывов пока нет.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% else %}
+        <h1 class="text-danger">Маршрут не найден</h1>
+        <p>Маршрута с указанным номером нет или автор скрыл его.</p>
+    {% endif %}
+
+    <a href="{% url 'routes:list' %}" class="btn btn-outline-secondary mt-4">
+        ← к списку маршрутов
+    </a>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% if review.is_positive %}
+    <span class="badge bg-success">★ {{ review.rating }}</span>
+{% else %}
+    <span class="badge bg-secondary">★ {{ review.rating }}</span>
+{% endif %}
